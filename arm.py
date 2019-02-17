@@ -1,21 +1,22 @@
 from dof import DOF, MotorDOF, ServoDOF
-import word_to_num as w2n
+from word2number import w2n
 from kinematics import FK, IK
+import math
 #install word to num package
 
-q = []
-o_curr = []
-prev_cmd = ''
-
 class Arm:
+
+    q = []
+    o_curr = []
+    prev_cmd = ''
 
     def __init__(self):
         self.vertical = MotorDOF(17, 11)
         self.wrist_rotate = ServoDOF(19)
         self.wrist_tilt = ServoDOF(26)
         self.gripper_A = MotorDOF(22, 10)
-        q = [0, 0, 0, 0, 0]
-        o_curr = FK(q)
+        self.q = [0, 0, 90, 0, 0]
+        self.o_curr = FK(self.q)
         #self.gripper_B = MotorDOF()
 
     # takes in arm object, joint positions array, returns nothing
@@ -34,54 +35,56 @@ class Arm:
     # OPEN GRIPPER ___
 
     # takes in speech command as string, returns nothing
-    def parse_text(command):
+    def parse_text(self, command):
+        #adapt for multi-word numbers
         if command is None:
             print('Sorry, I did not hear you.')
         else:
-            command.lower() # make lowercase
+            command = command.lower() # make lowercase
             cmd_arr = command.split() # create array of strings
             if 'move up' in command: # move up/down -> joint 1 motion
-                self.vertical.setPower(0.1)
-                q[0] = q[0] + 20 #placeholder
+                self.vertical.setPower(0.5)
+                self.q[0] = self.q[0] + 20 #placeholder
             elif 'move down' in command:
                 self.vertical.setPower(-0.1)
-                q[0] = q[0] - 20 #placeholder
-            o_curr = FK(q)
+                self.q[0] = self.q[0] - 20 #placeholder
+                o_curr = FK(self.q)
             elif 'rotate' in command: # rotate twds/away -> joint 2 motion
-                new_pos = w2n.word_to_num(cmd_arr[-2])*(math.pi/180.0)
+                new_pos = w2n.word_to_num(cmd_arr[-2])
                 if 'towards me' in command:
-                    q[1] = q[1] + new_pos
+                    self.q[1] = self.q[1] + new_pos
                 elif 'away from me' in command:
-                    q[1] = q[1] - new_pos
-                o_curr = FK(q)
+                    self.q[1] = self.q[1] - new_pos
+                o_curr = FK(self.q)
             elif 'pan' in command: # pan left/right -> joint 3 motion
-                new_pos = w2n.word_to_num(cmd_arr[-2])*(math.pi/180.0)
+                new_pos = w2n.word_to_num(cmd_arr[-2])
                 if 'left' in command:
-                    q[2] = q[2] + new_pos
+                    self.q[2] = self.q[2] + new_pos
                 elif 'right' in command:
-                    q[2] = q[2] - new_pos
-                o_curr = FK(q)
+                    self.q[2] = self.q[2] - new_pos
+                o_curr = FK(self.q)
             elif 'go to' in command: # exact position -> use IK to get q
                 x = w2n.word_to_num(cmd_arr[-3])
                 y = w2n.word_to_num(cmd_arr[-2])
                 z = w2n.word_to_num(cmd_arr[-1])
                 o = [x, y, z]
-                q = IK(o)
-                o_curr = o
+                self.q = IK(o)
+                self.o_curr = o
             elif 'open gripper' in command:
                 if (cmd_arr[-1] == 'one'):
-                    self.gripper_A.setPower(0.1)
+                    self.gripper_A.setPower(0.5)
                 else:
-                    self.gripper_B.setPower(0.1)
+                    self.gripper_B.setPower(0.5)
             elif 'stop' in command:
-                if (prev_cmd != None && 'open gripper' in prev_cmd):
+                if (prev_cmd != None and 'open gripper' in prev_cmd):
                     self.gripper_A.stop()
                     self.gripper_B.stop()
                 else:
                     self.vertical.stop()
 
         prev_cmd = command
-        set_dofs(self, q)
+        self.set_dofs(self.q)
+        print(self.q)
 
 
 
