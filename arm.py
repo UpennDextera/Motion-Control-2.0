@@ -34,6 +34,8 @@ class Arm:
     # GO TO (X,Y,Z)
     # OPEN GRIPPER ___
 
+# *** NEED TO ADD IN CATCHING ERRORS HERE ***
+
     # takes in speech command as string, returns nothing
     def parse_text(self, command):
         #adapt for multi-word numbers
@@ -85,8 +87,3 @@ class Arm:
         prev_cmd = command
         self.set_dofs(self.q)
         print(self.q)
-
-
-
-
-
