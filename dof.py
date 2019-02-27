@@ -39,4 +39,7 @@ class MotorDOF(DOF):
         if power > 0:
             self.motor.forward(power)
         else:
-            self.motor.backward(power)
+            self.motor.backward(power*-1)
+            
+    def stop(self):
+        self.motor.forward(0)

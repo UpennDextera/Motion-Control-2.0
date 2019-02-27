@@ -9,6 +9,8 @@ class Arm:
     q = []
     o_curr = []
     prev_cmd = ''
+    POWER_GRIPPER = 0.1
+    POWER_VERTICAL = 0.4
 
     def __init__(self):
         self.vertical = MotorDOF(17, 11)
@@ -45,10 +47,10 @@ class Arm:
             command = command.lower() # make lowercase
             cmd_arr = command.split() # create array of strings
             if 'move up' in command: # move up/down -> joint 1 motion
-                self.vertical.setPower(0.5)
-                self.q[0] = self.q[0] + 20 #placeholder
+                self.vertical.setPower(self.POWER_VERTICAL)
+                self.q[0] = self.q[0] + 20 #placeholder... should update after the stop command
             elif 'move down' in command:
-                self.vertical.setPower(-0.1)
+                self.vertical.setPower(self.POWER_VERTICAL * -1)
                 self.q[0] = self.q[0] - 20 #placeholder
                 o_curr = FK(self.q)
             elif 'rotate' in command: # rotate twds/away -> joint 2 motion
@@ -57,6 +59,7 @@ class Arm:
                     self.q[1] = self.q[1] + new_pos
                 elif 'away from me' in command:
                     self.q[1] = self.q[1] - new_pos
+                self.wrist_rotate.set_position(self.q[1])
                 o_curr = FK(self.q)
             elif 'pan' in command: # pan left/right -> joint 3 motion
                 new_pos = w2n.word_to_num(cmd_arr[-2])
@@ -64,6 +67,7 @@ class Arm:
                     self.q[2] = self.q[2] + new_pos
                 elif 'right' in command:
                     self.q[2] = self.q[2] - new_pos
+                self.wrist_tilt.set_position(self.q[1])
                 o_curr = FK(self.q)
             elif 'go to' in command: # exact position -> use IK to get q
                 x = w2n.word_to_num(cmd_arr[-3])
@@ -74,16 +78,22 @@ class Arm:
                 self.o_curr = o
             elif 'open gripper' in command:
                 if (cmd_arr[-1] == 'one'):
-                    self.gripper_A.setPower(0.5)
+                    self.gripper_A.setPower(self.POWER_GRIPPER)
                 else:
-                    self.gripper_B.setPower(0.5)
+                    self.gripper_B.setPower(self.POWER_GRIPPER)
+            elif 'close gripper' in command:
+                if (cmd_arr[-1] == 'one'):
+                    self.gripper_A.setPower(self.POWER_GRIPPER * -1)
+                else:
+                    self.gripper_B.setPower(self.POWER_GRIPPER * -1)
             elif 'stop' in command:
-                if (prev_cmd != None and 'open gripper' in prev_cmd):
+                if (self.prev_cmd != None and 'gripper' in self.prev_cmd):
                     self.gripper_A.stop()
-                    self.gripper_B.stop()
+                    #self.gripper_B.stop()
                 else:
                     self.vertical.stop()
 
-        prev_cmd = command
-        self.set_dofs(self.q)
-        print(self.q)
+            self.prev_cmd = command
+            print(self.prev_cmd)
+            self.set_dofs(self.q)
+            print(self.q)
