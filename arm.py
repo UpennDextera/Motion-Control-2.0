@@ -9,7 +9,7 @@ class Arm:
     q = []
     o_curr = []
     prev_cmd = ''
-    POWER_GRIPPER = 0.1
+    POWER_GRIPPER = -0.1 #Needs to be negative based on current motor config
     POWER_VERTICAL = 0.4
 
     def __init__(self):
